@@ -1,0 +1,1 @@
+nvidia-docker run --rm --name kaermorhen -p 59672:59672 -v ./:/rohlan/workspace -dti ai_project:v1

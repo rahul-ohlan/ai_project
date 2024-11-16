@@ -36,15 +36,15 @@ def parse_args():
     data_args.add_argument("--transform_obj", type=str, default="CustomTransform")
     data_args.add_argument('--checkpoint_dir', type=str, default='/rohlan/workspace/checkpoints/')
     data_args.add_argument('--experiment_ID', type=str, required=True) 
-    data_args.add_argument("--model", type=str, default='clip') # -- checkpoints directory
-    data_args.add_argument('--wandb_project', type=str, default='clip_all_cells')
+    data_args.add_argument("--model", type=str, default='clip') # -- checkpoints/<model>
+    data_args.add_argument('--wandb_project', type=str, default='ai_project')
 
     # train args 
     train_args = parser.add_argument_group("Train Args")
 
     train_args.add_argument("--train_batch_size", type=int, default=256)
     train_args.add_argument("--val_batch_size", type=int, default=256)
-    train_args.add_argument("--num_epochs", type=int, default=300)
+    train_args.add_argument("--num_epochs", type=int, default=2)
     train_args.add_argument("--lr", type=float, default=0.0001)
     train_args.add_argument("--patience", type=int, default=10)
     train_args.add_argument("--delta", type=float, default=0.0001)
@@ -73,7 +73,7 @@ def parse_args():
     # clip_model args
     clip_args = parser.add_argument_group("CLIP Model Args")
 
-    clip_args.add_argument("--freeze_encoder", type=str2bool, default="True")
+    clip_args.add_argument("--freeze_encoder", type=str2bool, default="False")
     clip_args.add_argument("--ge_type", type=str, default="median")
     clip_args.add_argument("--learnable_inv_tau", type=str2bool, default="True")
     clip_args.add_argument("--inv_tau", type=float, default=14.3)

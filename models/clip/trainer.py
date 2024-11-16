@@ -17,7 +17,7 @@ class CLIPTrainer:
         for batch_idx, batch in enumerate(dataloader):
 
             image = batch["image"].to(device) # gene expression
-            mol_embed = batch["smiles_embed"].to(device)
+            mol_embed = batch["smiles_emb"].to(device)
             smiles = batch["smiles"]
             
 
@@ -54,7 +54,7 @@ class CLIPTrainer:
         for batch_idx, batch in enumerate(dataloader):
                 
                 image = batch["image"].to(device) # gene expression
-                mol_embed = batch["smiles_embed"].to(device)
+                mol_embed = batch["smiles_emb"].to(device)
                 smiles = batch["smiles"]
 
                 # get model outputs

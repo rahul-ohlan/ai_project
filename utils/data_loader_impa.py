@@ -45,7 +45,7 @@ class CLIPDataset(Dataset):
         self.embeddings_dict= self.load_embeddings()
 
         self.split = split # train / test
-        self.meta_data = pd.read_csv(self.meta_data_path)
+        self.meta_data = pd.read_csv(self.meta_data_path).sample(100)
         self.meta_data = self.meta_data.loc[self.meta_data['SPLIT'] == self.split].reset_index(drop=True)
         
         self.device = device

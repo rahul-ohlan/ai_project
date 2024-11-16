@@ -67,7 +67,7 @@ class CLIP(nn.Module):
 
     def forward(self, image, mol_embed):  
         
-        print('input mol embeds:', mol_embed.shape, mol_embed)
+        # print('input mol embeds:', mol_embed.shape, mol_embed)
         image_features = self.encode_image(image)
         mol_features = self.encode_mol(mol_embed) # first encode mol_embeds through projection layer
 

@@ -44,7 +44,8 @@ class CLIPTrainer:
             if self.config["inv_tau_clamp"]:
                 model.logit_inv_tau.data.clamp_(min=0, max=self.config["inv_tau_max"])
 
-        return train_loss.avg, logit
+        # return train_loss.avg, logit
+        return train_loss.avg, model.logit_inv_tau.exp()
     
     def val_epoch(self,model, dataloader, device):
     

@@ -37,19 +37,19 @@ def parse_args():
     data_args.add_argument('--checkpoint_dir', type=str, default='/rohlan/workspace/checkpoints/')
     data_args.add_argument('--experiment_ID', type=str, required=True) 
     data_args.add_argument("--model", type=str, default='clip') # -- checkpoints/<model>
-    data_args.add_argument('--wandb_project', type=str, default='ai_project')
-    data_args.add_argument("--wandb_entity", type=str, default="res-ba-org")
 
     # train args 
     train_args = parser.add_argument_group("Train Args")
 
+    train_args.add_argument('--wandb_project', type=str, default='ai_project')
+    train_args.add_argument("--wandb_entity", type=str, default="res-ba-org")
+    train_args.add_argument("--use_wandb", type=str2bool, default='False')
     train_args.add_argument("--train_batch_size", type=int, default=256)
     train_args.add_argument("--val_batch_size", type=int, default=256)
     train_args.add_argument("--num_epochs", type=int, default=200)
     train_args.add_argument("--lr", type=float, default=0.0001)
     train_args.add_argument("--patience", type=int, default=10)
     train_args.add_argument("--delta", type=float, default=0.0001)
-    train_args.add_argument("--use_wandb", type=str2bool, default='False')
     train_args.add_argument('--device_id', type=str, default='1')
     train_args.add_argument("--device_ids", type=str_to_list, default="1, 2, 3, 4")
     train_args.add_argument("--distributed", type=str2bool, default="False")

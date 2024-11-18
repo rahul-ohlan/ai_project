@@ -1,76 +1,230 @@
-import torch
-from torch.utils.data import Dataset, DataLoader
+import warnings
+warnings.filterwarnings("ignore")
+
+import os
+from pathlib import Path
+
+import numpy as np
 import pandas as pd
 import pickle
 
+import torch
+from torch.utils.data import Dataset
+from utils.data_utils import CustomTransform, read_files_batch, read_files_pert
 
-
-# gene expression dataset
-class GexDataset(Dataset):
-    def __init__(self, data_file):
-        self.data = pd.read_pickle(data_file).reset_index(drop=True)
-        # DEBUG
-        # self.data = self.data.head(2048)
-        self.cell_line = self.data['cell']
-        self.gex = self.data['gex']
-        self.target = self.data['gex_median']
-
-    def __len__(self):
-        return len(self.data)
-    
-    def __getitem__(self, idx):
-
-        gex_tensor = torch.tensor(self.gex[idx], dtype=torch.float32)
-        target_tensor = torch.tensor(self.target[idx], dtype=torch.float32)
-        
-        return gex_tensor, target_tensor
-    
-    
-# CLIP Dataset
 class CLIPDataset(Dataset):
-    def __init__(self, data_file, basal_embeds, selfies_embeds, ge_type="median"):
+    """
+    Dataset class for cell image data.
 
-        self.gex_data = pd.read_pickle(data_file) # gene expression data
-        # DEBUG
-        # print("debugging loading only 2048 samples ...")
-        # self.gex_data = self.gex_data.head(2048)
-        self.gex_data = self.gex_data.drop_duplicates(subset="cell-pert_id").reset_index(drop=True) # since we need to consider only medians
+    This class handles the loading and preprocessing of cell image datasets, 
+    including the initialization of dataset splits, normalization, and embedding creation.
+    """
+    
+    def __init__(self, split, device, transform=None, **args):
+        """
+        Initialize the CellDataset instance.
+        
+        Args:
+            args (argparse.Namespace): Arguments containing dataset configuration.
+            device (torch.device): Device to load the data onto (e.g., 'cuda' or 'cpu').
+        """
+        super().__init__()
 
-        with open(f"{basal_embeds}", "rb") as f:
-            self.basal_embeds = pickle.load(f) # {"cell_line": nd.array}
+        self.data_path = args['data_dir']
+        assert os.path.exists(self.data_path), f"Data path {self.data_path} does not exist."
+        self.meta_data_csv = args['meta_data_csv']
+        self.embeddings_file = args['embeddings_file'] # path to SMILES: embeddings pkl file
 
-        self.selfies_embeds = torch.load(selfies_embeds) # .pth file -- {"pert_ids": [], "smiles": [], "selfies_embed": [], "selfies": [] }
-        # DEBUG
-        # self.data = self.data.head(2048)
-        self.cell_lines = self.gex_data['cell']
-        self.pert_ids = self.gex_data['pert_id']
 
-        if ge_type=="raw":
-            self.gex = self.gex_data['gex']
-        elif ge_type == "median":
-            self.gex = self.gex_data["gex_median"]
+        self.meta_data_path = os.path.join(self.data_path,'metadata',self.meta_data_csv) # root directory
+        self.embeddings_path = os.path.join(self.data_path,self.embeddings_file)
+
+        assert os.path.exists(self.meta_data_path), f"Metadata file {self.meta_data_path} does not exist."
+        assert os.path.exists(self.embeddings_path), f"Embeddings file {self.embeddings_path} does not exist."
+
+        self.embeddings_dict= self.load_embeddings()
+
+        self.split = split # train / test
+        self.meta_data = pd.read_csv(self.meta_data_path)
+        self.meta_data = self.meta_data.loc[self.meta_data['SPLIT'] == self.split].reset_index(drop=True)
+        
+        self.device = device
+        self.transform = transform
+
+    def load_embeddings(self):
+        """
+        Create and initialize the embeddings for molecules.
+        """
+        if os.path.exists(self.embeddings_path):
+            with open(self.embeddings_path, 'rb') as f:
+                self.embedding_dict = pickle.load(f)
+        else:
+            self.embedding_dict = []
+        
+        return self.embedding_dict
+    
 
     def __len__(self):
-        return len(self.gex_data)
-    
-    def __getitem__(self, idx):
-
-        gex_tensor = torch.tensor(self.gex.iloc[idx], dtype=torch.float32)
-        cell_line = self.cell_lines.iloc[idx]
-        pert_id = self.pert_ids.iloc[idx]
-
-        # find index of pert_id in selfies_embeds
-        pert_id_idx = self.selfies_embeds["pert_ids"].index(pert_id)
-        selfies_embed = torch.tensor(self.selfies_embeds["selfies_embed"][pert_id_idx], dtype=torch.float32).squeeze()
-        smiles = self.selfies_embeds["smiles"][pert_id_idx]
-        selfies = self.selfies_embeds["selfies"][pert_id_idx]
-        basal_tensor = torch.tensor(self.basal_embeds[cell_line], dtype=torch.float32).squeeze()
-
+        """
+        Return the length of the dataset.
         
-        return {"gex": gex_tensor,
-                "basal": basal_tensor,
-                "selfies_embed": selfies_embed,
-                "smiles": smiles,
-                "selfies": selfies,
-                "pert_id": pert_id,
-                "cell_line": cell_line}
+        Returns:
+            int: Length of the dataset.
+        """
+        return len(self.meta_data)
+    
+    def __getitem__(self,idx):
+
+        sample_key = self.meta_data.iloc[idx]['SAMPLE_KEY']
+        week, id_part, image_file = sample_key.split('_',2)
+        image_path = os.path.join(self.data_path, week, id_part, image_file + '.npy')
+        assert os.path.exists(image_path), f"Image file {image_path} does not exist."
+        # load image
+        image = torch.from_numpy(np.load(image_path))
+        image = torch.tensor(image, dtype=torch.float32)
+        image = image.permute(2, 0, 1)  # Place channel dimension in front of the others
+
+        if self.transform:
+            image = self.transform(image)
+        
+        smiles = self.meta_data.iloc[idx]['SMILES']
+        emb = self.embedding_dict.get(smiles,None)
+        if emb is not None:
+            emb = torch.tensor(emb, dtype=torch.float32)
+
+        return {
+            'image': image.to(self.device),
+            'smiles_emb': emb.to(self.device),
+            'smiles': smiles
+        }
+
+
+
+
+class CLIPDataLoader:
+    """
+
+    This class handles the creation of data loaders for training and testing, 
+    including the initialization of datasets and batch processing.
+    """
+    
+    def __init__(self, device,transform=None, **args):
+        """
+        Initialize the CellDataLoader instance.
+        
+        Args:
+            args (argparse.Namespace): Arguments containing dataloader configuration.
+        """
+        super().__init__()
+        self.device = device
+        self.args = args
+        self.transform = transform
+        self.init_dataset() # create datasets and return dataloaders
+        
+    def create_torch_datasets(self):
+        """
+        Create datasets compatible with the PyTorch training loop.
+        
+        Returns:
+            tuple: Training and test datasets.
+        """
+        train_set = CLIPDataset(split='train', device=self.device, transform=self.transform, **self.args)
+        test_set = CLIPDataset(split='test', device=self.device, transform=self.transform, **self.args)
+        
+        return train_set, test_set
+        
+    def init_dataset(self):
+        """
+        Initialize dataset and data loaders.
+        """
+        self.training_set, self.test_set = self.create_torch_datasets()
+        
+        self.loader_train = torch.utils.data.DataLoader(self.training_set, 
+                                                        batch_size=self.args['train_batch_size'], 
+                                                        shuffle=True, 
+                                                        # num_workers=self.args.num_workers, 
+                                                        drop_last=True)  
+
+        self.loader_test = torch.utils.data.DataLoader(self.test_set, 
+                                                       batch_size=self.args['val_batch_size'], 
+                                                       shuffle=False, 
+                                                    #    num_workers=self.args.num_workers, 
+                                                       drop_last=False)
+
+        self.loader_val = None   
+        
+    
+    def train_dataloader(self):
+        """
+        Return the training data loader.
+        
+        Returns:
+            DataLoader: Training data loader.
+        """
+        return self.loader_train
+    
+    def val_dataloader(self):
+        """
+        Return the validation data loader.
+        
+        Returns:
+            DataLoader: Validation data loader.
+        """
+        if self.loader_val is None:
+            raise NotImplementedError("Validation data loader not implemented.")
+        return self.loader_val
+    
+    def test_dataloader(self):
+        """
+        Return the test data loader.
+        
+        Returns:
+            DataLoader: Test data loader.
+        """
+        return self.loader_test
+    
+# DEBUG
+# s_args = {
+#     'data_dir': '/rohlan/workspace/data/bbbc021_all',
+#     'meta_data_csv': 'bbbc021_df_all.csv',
+#     'embeddings_file': 'unique_smiles_morgan_fingerprints.pkl',
+#     'train_batch_size': 32,
+#     'val_batch_size': 32,
+# }
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# data_loader = CLIPDataLoader(device, CustomTransform(), **s_args)
+
+# train_loader = data_loader.train_dataloader()
+# test_loader = data_loader.test_dataloader()
+
+# train_batch = next(iter(train_loader))
+# test_batch = next(iter(test_loader))
+
+# # # meta_data = pd.read_csv(os.path.join(s_args['data_dir'],'metadata',s_args['meta_data_csv']))
+# # # sample_key = meta_data.iloc[0]['SAMPLE_KEY']
+# # # # sample_key = 'Week1_22123_1_11_3.0'
+# # # week, id_part, image_file = sample_key.split('_',2)
+# # # image_path = os.path.join(s_args['data_dir'], week, id_part, image_file + '.npy')
+# # # from utils.data_utils import CustomTransform
+# # # transform = CustomTransform()
+
+# # # image = torch.from_numpy(np.load(image_path))
+# # # image = torch.tensor(image, dtype=torch.float32)
+# # # image = transform(image)
+
+# # # image.size()
+# # # image
+
+# # # # check for embeddings
+# train_batch.keys()
+# # train_batch['smiles']
+# # # check image encoder
+# train_batch['image'].size()
+# # image_sample = train_batch['image'][0]
+# # image_sample.size() # (96,3,3)
+# from models.clip.model import ImageEncoder
+# image_encoder = ImageEncoder()
+# image_encoder = image_encoder.to(device)
+
+# image_out = image_encoder(train_batch['image']) 
+# image_out.size() # 32, 256 expected

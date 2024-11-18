@@ -4,7 +4,7 @@ import yaml
 
 from models.clip.model import CLIP, projection, ImageEncoder
 from models.clip.trainer import CLIPTrainer
-from utils.data_loader_impa import CLIPDataLoader
+from utils.data_loader import CLIPDataLoader
 from utils.data_utils import CustomTransform
 
 import torch
@@ -38,13 +38,14 @@ def parse_args():
     data_args.add_argument('--experiment_ID', type=str, required=True) 
     data_args.add_argument("--model", type=str, default='clip') # -- checkpoints/<model>
     data_args.add_argument('--wandb_project', type=str, default='ai_project')
+    data_args.add_argument("--wandb_entity", type=str, default="res-ba-org")
 
     # train args 
     train_args = parser.add_argument_group("Train Args")
 
     train_args.add_argument("--train_batch_size", type=int, default=256)
     train_args.add_argument("--val_batch_size", type=int, default=256)
-    train_args.add_argument("--num_epochs", type=int, default=2)
+    train_args.add_argument("--num_epochs", type=int, default=200)
     train_args.add_argument("--lr", type=float, default=0.0001)
     train_args.add_argument("--patience", type=int, default=10)
     train_args.add_argument("--delta", type=float, default=0.0001)
@@ -79,7 +80,7 @@ def parse_args():
     clip_args.add_argument("--inv_tau", type=float, default=14.3)
     clip_args.add_argument("--loss_fn", type=str, default="infoNCE", choices=["infoNCE", "cloome"])
     clip_args.add_argument("--hopfield_scale", type=float, default=0.5)
-    clip_args.add_argument("--hopfield_input_dim", type=int, default=256)
+    clip_args.add_argument("--hopfield_input_dim", type=int, default=64)
     clip_args.add_argument("--inv_tau_clamp", type=str2bool, default="False")
     clip_args.add_argument("--inv_tau_max", type=float, default=4.6052)
     clip_args.add_argument("--use_attention", type=str2bool, default="False")

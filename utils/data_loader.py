@@ -202,50 +202,50 @@ class CLIPDataLoader:
         return self.loader_test
     
 # DEBUG
-s_args = {
-    'data_dir': '../data/bbbc021_all',
-    'meta_data_csv': 'bbbc021_df_all.csv',
-    'embeddings_file': 'unique_smiles_morgan_fingerprints.pkl',
-    'batch_size': 32,
-}
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-data_loader = CLIPDataLoader(device, CustomTransform(), **s_args)
+# s_args = {
+#     'data_dir': '../data/bbbc021_all',
+#     'meta_data_csv': 'bbbc021_df_all.csv',
+#     'embeddings_file': 'unique_smiles_morgan_fingerprints.pkl',
+#     'batch_size': 32,
+# }
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# data_loader = CLIPDataLoader(device, CustomTransform(), **s_args)
 
-train_loader = data_loader.train_dataloader()
-test_loader = data_loader.test_dataloader()
+# train_loader = data_loader.train_dataloader()
+# test_loader = data_loader.test_dataloader()
 
-train_batch = next(iter(train_loader))
-test_batch = next(iter(test_loader))
+# train_batch = next(iter(train_loader))
+# test_batch = next(iter(test_loader))
 
-print('this is DOSAGE----------------------;')
-print(train_batch['dosage'])
-print(train_batch['dosage'].size())
+# print('this is DOSAGE----------------------;')
+# print(train_batch['dosage'])
+# print(train_batch['dosage'].size())
 
-meta_data = pd.read_csv(os.path.join(s_args['data_dir'],'metadata',s_args['meta_data_csv']))
-sample_key = meta_data.iloc[0]['SAMPLE_KEY']
-# sample_key = 'Week1_22123_1_11_3.0'
-week, id_part, image_file = sample_key.split('_',2)
-image_path = os.path.join(s_args['data_dir'], week, id_part, image_file + '.npy')
-from utils.data_utils import CustomTransform
-transform = CustomTransform()
+# meta_data = pd.read_csv(os.path.join(s_args['data_dir'],'metadata',s_args['meta_data_csv']))
+# sample_key = meta_data.iloc[0]['SAMPLE_KEY']
+# # sample_key = 'Week1_22123_1_11_3.0'
+# week, id_part, image_file = sample_key.split('_',2)
+# image_path = os.path.join(s_args['data_dir'], week, id_part, image_file + '.npy')
+# from utils.data_utils import CustomTransform
+# transform = CustomTransform()
 
-image = torch.from_numpy(np.load(image_path))
-image = torch.tensor(image, dtype=torch.float32)
-image = transform(image)
+# image = torch.from_numpy(np.load(image_path))
+# image = torch.tensor(image, dtype=torch.float32)
+# image = transform(image)
 
-print(image.size())
+# print(image.size())
 
 
-# # # check for embeddings
-train_batch.keys()
-train_batch['smiles']
-# # check image encoder
-train_batch['image'].size()
-image_sample = train_batch['image'][0]
-image_sample.size() # (96,3,3)
-from models.clip.model import ImageEncoder, projection, CLIP
-image_encoder = ImageEncoder()
-image_encoder = image_encoder.to(device)
+# # # # check for embeddings
+# train_batch.keys()
+# train_batch['smiles']
+# # # check image encoder
+# train_batch['image'].size()
+# image_sample = train_batch['image'][0]
+# image_sample.size() # (96,3,3)
+# from models.clip.model import ImageEncoder, projection, CLIP
+# image_encoder = ImageEncoder()
+# image_encoder = image_encoder.to(device)
 
-image_out = image_encoder(train_batch['image']) 
-print(image_out.size()) # 32, 256 expected
+# image_out = image_encoder(train_batch['image']) 
+# print(image_out.size()) # 32, 256 expected

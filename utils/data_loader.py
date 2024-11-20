@@ -10,6 +10,7 @@ import pickle
 
 import torch
 from torch.utils.data import Dataset
+from sklearn.preprocessing import OneHotEncoder
 from utils.data_utils import CustomTransform, read_files_batch, read_files_pert
 
 class CLIPDataset(Dataset):
@@ -52,6 +53,9 @@ class CLIPDataset(Dataset):
         
         self.device = device
         self.transform = transform
+        self.encoder = OneHotEncoder(sparse=False)
+        unique_doses = self.meta_data['DOSE'].unique().reshape(-1, 1)
+        self.encoder.fit(unique_doses)
 
     def load_embeddings(self):
         """
@@ -64,7 +68,15 @@ class CLIPDataset(Dataset):
             self.embedding_dict = []
         
         return self.embedding_dict
-    
+
+    def one_hot_encode_dosage(self, dose):
+        """
+        One-hot encode the dosage value using the fitted encoder.
+        """
+        dose_array = np.array(dose).reshape(-1, 1)
+        encoded = self.encoder.transform(dose_array)
+        return torch.tensor(encoded[0], dtype=torch.float32)
+
 
     def __len__(self):
         """
@@ -78,6 +90,7 @@ class CLIPDataset(Dataset):
     def __getitem__(self,idx):
 
         sample_key = self.meta_data.iloc[idx]['SAMPLE_KEY']
+        dosage = self.meta_data.iloc[idx]['DOSE']
         week, id_part, image_file = sample_key.split('_',2)
         image_path = os.path.join(self.data_path, week, id_part, image_file + '.npy')
         assert os.path.exists(image_path), f"Image file {image_path} does not exist."
@@ -94,10 +107,13 @@ class CLIPDataset(Dataset):
         if emb is not None:
             emb = torch.tensor(emb, dtype=torch.float32)
 
+        dosage_encoded = self.one_hot_encode_dosage(dosage)
+        
         return {
             'image': image.to(self.device),
             'smiles_emb': emb.to(self.device),
-            'smiles': smiles
+            'smiles': smiles, 
+            'dosage': dosage_encoded.to(self.device)
         }
 
 
@@ -187,11 +203,10 @@ class CLIPDataLoader:
     
 # DEBUG
 # s_args = {
-#     'data_dir': '/rohlan/workspace/data/bbbc021_all',
+#     'data_dir': '../data/bbbc021_all',
 #     'meta_data_csv': 'bbbc021_df_all.csv',
 #     'embeddings_file': 'unique_smiles_morgan_fingerprints.pkl',
-#     'train_batch_size': 32,
-#     'val_batch_size': 32,
+#     'batch_size': 32,
 # }
 # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # data_loader = CLIPDataLoader(device, CustomTransform(), **s_args)
@@ -202,31 +217,35 @@ class CLIPDataLoader:
 # train_batch = next(iter(train_loader))
 # test_batch = next(iter(test_loader))
 
-# # # meta_data = pd.read_csv(os.path.join(s_args['data_dir'],'metadata',s_args['meta_data_csv']))
-# # # sample_key = meta_data.iloc[0]['SAMPLE_KEY']
-# # # # sample_key = 'Week1_22123_1_11_3.0'
-# # # week, id_part, image_file = sample_key.split('_',2)
-# # # image_path = os.path.join(s_args['data_dir'], week, id_part, image_file + '.npy')
-# # # from utils.data_utils import CustomTransform
-# # # transform = CustomTransform()
+# print('this is DOSAGE----------------------;')
+# print(train_batch['dosage'])
+# print(train_batch['dosage'].size())
 
-# # # image = torch.from_numpy(np.load(image_path))
-# # # image = torch.tensor(image, dtype=torch.float32)
-# # # image = transform(image)
+# meta_data = pd.read_csv(os.path.join(s_args['data_dir'],'metadata',s_args['meta_data_csv']))
+# sample_key = meta_data.iloc[0]['SAMPLE_KEY']
+# # sample_key = 'Week1_22123_1_11_3.0'
+# week, id_part, image_file = sample_key.split('_',2)
+# image_path = os.path.join(s_args['data_dir'], week, id_part, image_file + '.npy')
+# from utils.data_utils import CustomTransform
+# transform = CustomTransform()
 
-# # # image.size()
-# # # image
+# image = torch.from_numpy(np.load(image_path))
+# image = torch.tensor(image, dtype=torch.float32)
+# image = transform(image)
+
+# print(image.size())
+
 
 # # # # check for embeddings
 # train_batch.keys()
-# # train_batch['smiles']
+# train_batch['smiles']
 # # # check image encoder
 # train_batch['image'].size()
-# # image_sample = train_batch['image'][0]
-# # image_sample.size() # (96,3,3)
-# from models.clip.model import ImageEncoder
+# image_sample = train_batch['image'][0]
+# image_sample.size() # (96,3,3)
+# from models.clip.model import ImageEncoder, projection, CLIP
 # image_encoder = ImageEncoder()
 # image_encoder = image_encoder.to(device)
 
 # image_out = image_encoder(train_batch['image']) 
-# image_out.size() # 32, 256 expected
+# print(image_out.size()) # 32, 256 expected

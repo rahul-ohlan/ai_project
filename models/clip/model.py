@@ -40,15 +40,11 @@ class CLIP(nn.Module):
 
     
     def encode_image(self, image):
-        print('image org', image.shape)
         
         latent_vector = self.image_encoder(image)
-        print('latent_vector org', latent_vector.shape)
 
         if self.image_projection is not None:
-            print('are we in here?')
             latent_vector = self.image_projection(latent_vector)
-            print('latent_vector org', latent_vector.shape)
 
 
         return latent_vector
@@ -70,11 +66,7 @@ class CLIP(nn.Module):
 
     def forward(self, image, mol_embed, concentration_one_hot):  
         
-        print('input mol embeds:', mol_embed.shape)
-        print('input concentration_one_hot:', concentration_one_hot.shape)
-    
         mol_embed_with_concentration = torch.cat([mol_embed, concentration_one_hot], dim=1)
-        print('this is combined output', mol_embed_with_concentration.size())
         image_features = self.encode_image(image)
 
         mol_features = self.encode_mol(mol_embed_with_concentration) # first encode mol_embeds through projection layer

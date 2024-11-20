@@ -243,7 +243,7 @@ train_batch['smiles']
 train_batch['image'].size()
 image_sample = train_batch['image'][0]
 image_sample.size() # (96,3,3)
-from models.clip.model import ImageEncoder
+from models.clip.model import ImageEncoder, projection, CLIP
 image_encoder = ImageEncoder()
 image_encoder = image_encoder.to(device)
 

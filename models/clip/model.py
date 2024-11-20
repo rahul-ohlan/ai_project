@@ -46,6 +46,7 @@ class CLIP(nn.Module):
         print('latent_vector org', latent_vector.shape)
 
         if self.image_projection is not None:
+            print('are we in here?')
             latent_vector = self.image_projection(latent_vector)
             print('latent_vector org', latent_vector.shape)
 

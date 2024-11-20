@@ -168,7 +168,7 @@ class projection(nn.Module):
         super().__init__()
 
         self.layers = nn.ModuleList()
-        input_dim = input_dim + 18
+        input_dim = input_dim
 
         for layer in range(len(hidden_sizes)):
             dim = input_dim if layer == 0 else hidden_sizes[layer-1]

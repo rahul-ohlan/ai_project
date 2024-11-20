@@ -168,8 +168,8 @@ class projection(nn.Module):
                             #    nn.LayerNorm(hidden_sizes[layer]),
                             # nn.BatchNorm1d(hidden_sizes[layer]),
                             #    nn.LeakyReLU(0.2),
-                            nn.ReLU())
-                            #    nn.Dropout(0.2))
+                            nn.ReLU(),
+                               nn.Dropout(0.3))
                                )
 
         self.layers.append(nn.Sequential(

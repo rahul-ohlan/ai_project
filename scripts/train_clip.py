@@ -36,24 +36,24 @@ def parse_args():
     data_args.add_argument("--transform_obj", type=str, default="CustomTransform")
     data_args.add_argument('--checkpoint_dir', type=str, default='/rohlan/workspace/checkpoints/')
     data_args.add_argument('--experiment_ID', type=str, required=True) 
-    data_args.add_argument("--model", type=str, default='clip') # -- checkpoints/<model>
+    data_args.add_argument("--model_chkpt_dir", type=str, default='clip') # -- checkpoints/<model>
 
     # train args 
     train_args = parser.add_argument_group("Train Args")
 
-    train_args.add_argument('--wandb_project', type=str, default='ai_project')
-    train_args.add_argument("--wandb_entity", type=str, default="res-ba-org")
+    train_args.add_argument('--wandb_project', type=str, default='ai_project_colab')
+    train_args.add_argument("--wandb_entity", type=str, default="ai_project_colab")
     train_args.add_argument("--use_wandb", type=str2bool, default='False')
-    train_args.add_argument("--train_batch_size", type=int, default=256)
-    train_args.add_argument("--val_batch_size", type=int, default=256)
+    train_args.add_argument("--batch_size", type=int, default=256)
     train_args.add_argument("--num_epochs", type=int, default=200)
     train_args.add_argument("--lr", type=float, default=0.0001)
-    train_args.add_argument("--patience", type=int, default=10)
+    train_args.add_argument("--patience", type=int, default=25)
     train_args.add_argument("--delta", type=float, default=0.0001)
     train_args.add_argument('--device_id', type=str, default='1')
     train_args.add_argument("--device_ids", type=str_to_list, default="1, 2, 3, 4")
     train_args.add_argument("--distributed", type=str2bool, default="False")
-    train_args.add_argument("--save_every", type=int, default=0)    
+    train_args.add_argument("--save_every", type=int, default=0)
+    train_args.add_argument("--weight_decay", type=float, default=1e-5)    
     
     # model args
 
@@ -75,7 +75,6 @@ def parse_args():
     clip_args = parser.add_argument_group("CLIP Model Args")
 
     clip_args.add_argument("--freeze_encoder", type=str2bool, default="False")
-    clip_args.add_argument("--ge_type", type=str, default="median")
     clip_args.add_argument("--learnable_inv_tau", type=str2bool, default="True")
     clip_args.add_argument("--inv_tau", type=float, default=14.3)
     clip_args.add_argument("--loss_fn", type=str, default="infoNCE", choices=["infoNCE", "cloome"])
@@ -83,7 +82,6 @@ def parse_args():
     clip_args.add_argument("--hopfield_input_dim", type=int, default=64)
     clip_args.add_argument("--inv_tau_clamp", type=str2bool, default="False")
     clip_args.add_argument("--inv_tau_max", type=float, default=4.6052)
-    clip_args.add_argument("--use_attention", type=str2bool, default="False")
 
     
     
@@ -98,7 +96,7 @@ def parse_args():
 def main(config_file):
     
     # save configuration
-    config_save_path = os.path.join(config_file['checkpoint_dir'], config_file['model'], f"{config_file['experiment_ID']}")
+    config_save_path = os.path.join(config_file['checkpoint_dir'], config_file['model_chkpt_dir'], f"{config_file['experiment_ID']}")
     os.makedirs(config_save_path, exist_ok=True)
 
     # save config

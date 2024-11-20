@@ -57,19 +57,24 @@ class CLIP(nn.Module):
         for param in self.image_encoder.parameters():
             param.requires_grad = True
 
-    def encode_mol(self, mol_embed): # chemical encoder (bs, 2048)
-
+    def encode_mol(self, mol_embed_with_concentration): # chemical encoder (bs, 2048), concentration (bs, N)
         # project through mol projection network
 
-        projected_mol_embeds = self.mol_projection(mol_embed)
+        projected_mol_embeds = self.mol_projection(mol_embed_with_concentration)
 
         return projected_mol_embeds
 
-    def forward(self, image, mol_embed):  
+    def forward(self, image, mol_embed, concentration_one_hot):  
         
-        # print('input mol embeds:', mol_embed.shape, mol_embed)
+        print('input mol embeds:', mol_embed.shape, mol_embed)
+        print('input concentration_one_hot:', concentration_one_hot.shape, concentration_one_hot)
+    
         image_features = self.encode_image(image)
-        mol_features = self.encode_mol(mol_embed) # first encode mol_embeds through projection layer
+        mol_embed_with_concentration = torch.cat([mol_embed, concentration_one_hot], dim = 1)
+        print('this is combined output', mol_embed_with_concentration.size())
+        print('this is combined output', mol_embed_with_concentration)
+
+        mol_features = self.encode_mol(mol_embed_with_concentration) # first encode mol_embeds through projection layer
 
         # gene_features_norm = gene_features / gene_features.norm(dim=-1, keepdim=True)
         # text_features_norm = text_features / text_features.norm(dim=-1, keepdim=True)
@@ -179,33 +184,7 @@ class projection(nn.Module):
     def forward(self, x):
         for layer in self.layers:
             x = layer(x)
-        return x
-    
-class AttentivePooling(nn.Module):
-    def __init__(self, mol_hidden_size, gene_hidden_size):
-        super(AttentivePooling, self).__init__()
-        self.mol_hidden_size = mol_hidden_size
-        self.gene_hidden_size = gene_hidden_size
-        # Learnable attention parameter
-        self.param = nn.Parameter(torch.zeros(mol_hidden_size, gene_hidden_size))
-
-    def forward(self, mol_embedding, gene_embedding):
-        # Compute attention scores for molecule -> gene
-        mol_to_gene_att = torch.matmul(gene_embedding.unsqueeze(1), self.param.transpose(0, 1).unsqueeze(0))
-        score_mol_to_gene = F.softmax(mol_to_gene_att, dim=2)
-        
-        # Compute attention scores for gene -> molecule
-        gene_to_mol_att = torch.matmul(mol_embedding.unsqueeze(1), self.param.unsqueeze(0))
-        score_gene_to_mol = F.softmax(gene_to_mol_att, dim=2)
-        
-        # Weighted representations
-        rep_mol = torch.sum(mol_embedding.unsqueeze(1) * score_mol_to_gene, dim=1)
-        rep_gene = torch.sum(gene_embedding.unsqueeze(1) * score_gene_to_mol, dim=1)
-        
-        # Concatenate the attention-weighted representations
-        combined_representation = torch.cat((rep_mol, rep_gene), dim=1)
-        return combined_representation
-    
+        return x    
 
 # resnet model
 class ResBlk(nn.Module):

@@ -203,7 +203,7 @@ class CLIPDataLoader:
     
 # DEBUG
 s_args = {
-    'data_dir': '//home/raid/home/amitesh/bbbc021_all',
+    'data_dir': '../data/bbbc021_all',
     'meta_data_csv': 'bbbc021_df_all.csv',
     'embeddings_file': 'unique_smiles_morgan_fingerprints.pkl',
     'train_batch_size': 32,

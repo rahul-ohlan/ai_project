@@ -206,8 +206,7 @@ s_args = {
     'data_dir': '../data/bbbc021_all',
     'meta_data_csv': 'bbbc021_df_all.csv',
     'embeddings_file': 'unique_smiles_morgan_fingerprints.pkl',
-    'train_batch_size': 32,
-    'val_batch_size': 32,
+    'batch_size': 32,
 }
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 data_loader = CLIPDataLoader(device, CustomTransform(), **s_args)

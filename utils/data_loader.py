@@ -219,6 +219,7 @@ test_batch = next(iter(test_loader))
 
 print('this is DOSAGE----------------------;')
 print(train_batch['dosage'])
+print(train_batch['dosage'].size())
 
 meta_data = pd.read_csv(os.path.join(s_args['data_dir'],'metadata',s_args['meta_data_csv']))
 sample_key = meta_data.iloc[0]['SAMPLE_KEY']

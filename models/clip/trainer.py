@@ -19,11 +19,12 @@ class CLIPTrainer:
             image = batch["image"].to(device) # gene expression
             mol_embed = batch["smiles_emb"].to(device)
             smiles = batch["smiles"]
+            dosage = batch["dosage"].to(device)
             
 
 
             # get model outputs
-            gene_features, mol_features, logit = model(image, mol_embed) # it returns unnormed embeddings
+            gene_features, mol_features, logit = model(image, mol_embed, dosage) # it returns unnormed embeddings
 
             # print(image_features.size(), text_features.size())
 

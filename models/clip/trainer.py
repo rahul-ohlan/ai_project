@@ -58,9 +58,13 @@ class CLIPTrainer:
                 image = batch["image"].to(device) # gene expression
                 mol_embed = batch["smiles_emb"].to(device)
                 smiles = batch["smiles"]
+                dosage = batch["dosage"].to(device)
+            
+
 
                 # get model outputs
-                gene_features, mol_features, logit = model(image, mol_embed)
+                gene_features, mol_features, logit = model(image, mol_embed, dosage) # it returns unnormed embeddings
+
 
                 # compute loss
                 if self.config["loss_fn"] == "infoNCE":

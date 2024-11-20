@@ -1,49 +1,80 @@
 #!/bin/bash
 
+# constants
+DATA_DIR="/rohlan/workspace/data/bbbc021_all"
+EMBEDDINGS_FILE="unique_smiles_morgan_fingerprints.pkl"
+CHECKPOINT_DIR="/rohlan/workspace/checkpoints/"
+MODEL_CHKPT_DIR="clip"
+FREEZE_ENCODER="false"
+
+# data args
+USE_WANDB="yes"
+WANDB_PROJECT="ai_project_colab"
+WANDB_ENTITY="ai_project_colab"
+BATCH_SIZE=256
+NUM_EPOCHS=200
+LR=0.0005
+PATIENCE=25
+DELTA=0.0001
+DEVICE_ID=3 # 0, 1, 2, 3
+DEVICE_IDS="0,1,2,3"
+DISTRIBUTED="false"
+LOSS_FN="cloome"
+LEARNABLE_INV_TAU="false"
+INV_TAU=14.3   # 0.2, 2.3, 5.0, 14.3
+HOPFIELD_SCALE=0.3
+HOPFIELD_INPUT_DIM=64
+INV_TAU_CLAMP="yes"
+
+EXPERIMENT_ID="cloome_inv_tau_${INV_TAU}"
+echo "Running experiment with inv tau: $INV_TAU and experiment ID: $EXPERIMENT_ID"
+
 python train_clip.py \
-    --experiment_ID 'cloome_scale_0.3' \
-    --wandb_project 'ai_project_colab' \
-    --wandb_entity 'ai_project_colab' \
-    --train_batch_size 32 \
-    --val_batch_size 32 \
-    --lr 0.0005 \
-    --num_epochs 100 \
-    --use_wandb 'yes' \
-    --device_id 1 \
-    --loss_fn 'cloome' \
-    --image_proj_output_size 64 \
-    --image_proj_hidden_sizes '256, 128' \
-    --mol_proj_hidden_sizes '512, 256, 128' \
-    --mol_proj_input_size 2048 \
-    --mol_proj_output_size 64 \
-    --hopfield_input_dim 64 \
-    --freeze_encoder 'no' \
-    --learnable_inv_tau 'yes' \
-    --inv_tau 14.3 \
-    --hopfield_scale 0.3 
+    --experiment_ID $EXPERIMENT_ID \
+    --use_wandb $USE_WANDB \
+    --wandb_project $WANDB_PROJECT \
+    --wandb_entity $WANDB_ENTITY \
+    --batch_size $BATCH_SIZE \
+    --num_epochs $NUM_EPOCHS \
+    --lr $LR \
+    --patience $PATIENCE \
+    --delta $DELTA \
+    --device_id $DEVICE_ID \
+    --device_ids $DEVICE_IDS \
+    --distributed $DISTRIBUTED \
+    --loss_fn $LOSS_FN \
+    --learnable_inv_tau $LEARNABLE_INV_TAU \
+    --inv_tau $INV_TAU \
+    --hopfield_scale $HOPFIELD_SCALE \
+    --hopfield_input_dim $HOPFIELD_INPUT_DIM \
+    --inv_tau_clamp $INV_TAU_CLAMP
 
-
-# Array of learning rates to experiment with
-# LEARNING_RATES=(0.0005 0.001 0.01)
+# Array of a parameter to experiment with
+# INV_TAU=(0.2 1.0 5.0 14.3)
 # # Loop over each learning rate
-# for LR in "${LEARNING_RATES[@]}"
+# for i in "${!INV_TAU[@]}";
 # do
-#     EXPERIMENT_ID="experiment_lr_${LR}"
-#     echo "Running experiment with learning rate: $LR and experiment ID: $EXPERIMENT_ID"
-    
+#     inv_tau=${INV_TAU[$i]}
+#     EXPERIMENT_ID="cloome_inv_tau_${inv_tau}"
+#     echo "Running experiment with inv tau: $inv_tau and experiment ID: $EXPERIMENT_ID"
 #     python train_clip.py \
-#         --num_epochs $EPOCHS \
-#         --batch_size $BATCH_SIZE \
-#         --mol_proj_hidden_sizes $MOL_PROJ_HIDDEN_SIZES \
-#         --mol_proj_input_size $MOL_PROJ_INPUT_SIZE \
-#         --mol_proj_output_size $MOL_PROJ_OUTPUT_SIZE \
-#         --freeze_encoder $FREEZE_ENCODER \
-#         --ge_type $GE_TYPE \
-#         --learnable_inv_tau $LEARNABLE_INV_TAU \
-#         --inv_tau $INV_TAU \
-#         --loss_fn $LOSS_FN \
-#         --hopfield_scale $HOPFIELD_SCALE \
-#         --use_wandb $USE_WANDB \
-#         --experiment_ID $EXPERIMENT_ID \
-#         --lr $LR
+#     --experiment_ID $EXPERIMENT_ID \
+#     --use_wandb $USE_WANDB \
+#     --wandb_project $WANDB_PROJECT \
+#     --wandb_entity $WANDB_ENTITY \
+#     --batch_size $BATCH_SIZE \
+#     --num_epochs $NUM_EPOCHS \
+#     --lr $LR \
+#     --patience $PATIENCE \
+#     --delta $DELTA \
+#     --device_id $DEVICE_ID \
+#     --device_ids $DEVICE_IDS \
+#     --distributed $DISTRIBUTED \
+#     --loss_fn $LOSS_FN \
+#     --learnable_inv_tau $LEARNABLE_INV_TAU \
+#     --inv_tau $INV_TAU \
+#     --hopfield_scale $HOPFIELD_SCALE \
+#     --hopfield_input_dim $HOPFIELD_INPUT_DIM \
+#     --inv_tau_clamp $INV_TAU_CLAMP
+    
 # done

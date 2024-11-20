@@ -46,6 +46,8 @@ class CLIPDataset(Dataset):
 
         self.split = split # train / test
         self.meta_data = pd.read_csv(self.meta_data_path)
+        # DEBUG
+        # self.meta_data = self.meta_data.sample(500)
         self.meta_data = self.meta_data.loc[self.meta_data['SPLIT'] == self.split].reset_index(drop=True)
         
         self.device = device
@@ -140,13 +142,13 @@ class CLIPDataLoader:
         self.training_set, self.test_set = self.create_torch_datasets()
         
         self.loader_train = torch.utils.data.DataLoader(self.training_set, 
-                                                        batch_size=self.args['train_batch_size'], 
+                                                        batch_size=self.args['batch_size'], 
                                                         shuffle=True, 
                                                         # num_workers=self.args.num_workers, 
                                                         drop_last=True)  
 
         self.loader_test = torch.utils.data.DataLoader(self.test_set, 
-                                                       batch_size=self.args['val_batch_size'], 
+                                                       batch_size=self.args['batch_size'], 
                                                        shuffle=False, 
                                                     #    num_workers=self.args.num_workers, 
                                                        drop_last=False)

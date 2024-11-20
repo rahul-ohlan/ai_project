@@ -9,7 +9,7 @@ class CLIPTrainer:
     def __init__(self, config):
         self.config = config
 
-    def train_epoch(self,model, dataloader, device, optimizer):
+    def train_epoch(self,model, dataloader, device, optimizer, scheduler=None):
 
         model.train()
         train_loss = AvgMeter()
@@ -42,12 +42,12 @@ class CLIPTrainer:
 
             # clamp inv_tau?
             if self.config["inv_tau_clamp"]:
-                model.logit_inv_tau.data.clamp_(min=0, max=self.config["inv_tau_max"])
+                model.logit_inv_tau.data.clamp_(min=0.1, max=self.config["inv_tau_max"])
 
         # return train_loss.avg, logit
         return train_loss.avg, logit
     
-    def val_epoch(self,model, dataloader, device):
+    def val_epoch(self,model, dataloader, device, scheduler=None):
     
         model.eval() # turn off dropout
         val_loss = AvgMeter()
@@ -68,6 +68,10 @@ class CLIPTrainer:
                     loss = model.cloob(gene_features, mol_features, logit, self.config["hopfield_input_dim"], self.config["hopfield_scale"], device)
 
                 val_loss.update(loss.item(), gene_features.size(0))
+        
+        # update learning rate
+        if scheduler:
+            scheduler.step(val_loss.avg)
 
         return val_loss.avg, logit
     
@@ -82,18 +86,21 @@ class CLIPTrainer:
             wandb.config.update(self.config)
 
         num_epochs = self.config['num_epochs']
-        optimizer = torch.optim.Adam(model.parameters(), lr=self.config['lr'])
+        optimizer = torch.optim.Adam(model.parameters(), lr=self.config['lr'], weight_decay=1e-5)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 
+                                                               mode='min', 
+                                                               factor=0.1, patience=7, verbose=True)
 
         print('starting training...')
 
-        val_checkpoint = os.path.join(self.config['checkpoint_dir'], self.config['model'], self.config['experiment_ID'])
+        val_checkpoint = os.path.join(self.config['checkpoint_dir'], self.config['model_chkpt_dir'], self.config['experiment_ID'])
         patience, delta = self.config['patience'], self.config['delta']
         early_stopping = EarlyStopping(save_path=val_checkpoint, save_frequency= self.config["save_every"], patience=patience, delta=delta)
         
         for epoch in range(num_epochs):
 
             # train epoch loss
-            train_loss, train_logit = self.train_epoch(model, train_loader, DEVICE, optimizer)
+            train_loss, train_logit = self.train_epoch(model, train_loader, DEVICE, optimizer, scheduler)
             print(f"Epoch: {epoch+1}, Train Loss: {train_loss}")
 
             if USE_WANDB:

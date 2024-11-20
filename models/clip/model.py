@@ -40,11 +40,14 @@ class CLIP(nn.Module):
 
     
     def encode_image(self, image):
+        print('image org', image.shape)
         
         latent_vector = self.image_encoder(image)
+        print('latent_vector org', latent_vector.shape)
 
         if self.image_projection is not None:
             latent_vector = self.image_projection(latent_vector)
+            print('latent_vector org', latent_vector.shape)
 
 
         return latent_vector

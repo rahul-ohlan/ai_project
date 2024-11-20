@@ -70,7 +70,7 @@ class CLIP(nn.Module):
         print('input concentration_one_hot:', concentration_one_hot.shape)
     
         image_features = self.encode_image(image)
-        mol_embed_with_concentration = torch.cat([mol_embed, concentration_one_hot])
+        mol_embed_with_concentration = torch.cat([mol_embed, concentration_one_hot], dim=1)
         print('this is combined output', mol_embed_with_concentration.size())
 
         mol_features = self.encode_mol(mol_embed_with_concentration) # first encode mol_embeds through projection layer

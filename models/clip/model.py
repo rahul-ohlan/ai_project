@@ -66,13 +66,12 @@ class CLIP(nn.Module):
 
     def forward(self, image, mol_embed, concentration_one_hot):  
         
-        print('input mol embeds:', mol_embed.shape, mol_embed)
-        print('input concentration_one_hot:', concentration_one_hot.shape, concentration_one_hot)
+        print('input mol embeds:', mol_embed.shape)
+        print('input concentration_one_hot:', concentration_one_hot.shape)
     
         image_features = self.encode_image(image)
-        mol_embed_with_concentration = torch.cat([mol_embed, concentration_one_hot], dim = 1)
+        mol_embed_with_concentration = torch.cat([mol_embed, concentration_one_hot])
         print('this is combined output', mol_embed_with_concentration.size())
-        print('this is combined output', mol_embed_with_concentration)
 
         mol_features = self.encode_mol(mol_embed_with_concentration) # first encode mol_embeds through projection layer
 

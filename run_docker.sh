@@ -1,1 +1,0 @@
-docker run --name=kaermohan -it --rm -p 59672:59672 --gpus all -v ./:/rohlan/workspace -dti ai_project:latest

@@ -14,7 +14,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 
 
 # SimCLR
-from models.simCLR import simCLR, ImageEncoder, simCLRTrainer
+from models.simCLR import simCLR, ImageEncoder, simCLRTrainer, simCLRrn50
 from models.simCLR.modules import NT_Xent
 from models.simCLR.modules.transformations import TransformsSimCLR
 from models.simCLR.modules.sync_batchnorm import convert_model
@@ -57,16 +57,17 @@ def parse_args():
     train_args.add_argument("--use_wandb", type=str2bool, default='True')
     train_args.add_argument("--batch_size", type=int, default=256)
     train_args.add_argument("--num_epochs", type=int, default=100)
-    train_args.add_argument("--lr", type=float, default=0.00001)
+    train_args.add_argument("--lr", type=float, default=0.0005)
     train_args.add_argument("--patience", type=int, default=25)
     train_args.add_argument("--delta", type=float, default=0.0001)
     train_args.add_argument('--device_id', type=str, default='1')
-    train_args.add_argument("--gpu_ids", type=str_to_list, default="0, 1, 5, 6, 7")
+    train_args.add_argument("--gpu_ids", type=str_to_list, default="0, 1, 5, 6")
     train_args.add_argument("--nodes", type=int, default=1)
     train_args.add_argument("--distributed", type=str2bool, default="True")
     train_args.add_argument("--save_every", type=int, default=0)
     train_args.add_argument("--weight_decay", type=float, default=1e-5)  
     train_args.add_argument("--optimizer", type=str, default="Adam", choices=["Adam", "LARS"])  
+    train_args.add_argument("--use_scheduler", type=str2bool, default="False")
     
     # model args
 
@@ -74,8 +75,9 @@ def parse_args():
     image_proj_args = parser.add_argument_group("Image Projection Head Args")
 
     image_proj_args.add_argument("--n_features", type=int, default=256) # -- output of resnet encoder from IMPA
-    image_proj_args.add_argument("--projection_dim", type=int, default=128) # final projection for contrastive learning
+    image_proj_args.add_argument("--projection_dim", type=int, default=256) # final projection for contrastive learning
     image_proj_args.add_argument("--image_size", type=int, default=96) # size of images
+    image_proj_args.add_argument("--resnet_model", type=str, default="resnet50", choices=["resnetIMPA", "resnet50"]) # resnet model to use
 
 
     # simCLR model args
@@ -128,9 +130,12 @@ def main(rank, config_file):
     print("loading models ...")
     image_encoder = ImageEncoder().to(device)
 
-    model = simCLR(encoder=image_encoder,
-                   projection_dim=config_file['projection_dim'],
-                   n_features=config_file['n_features']) # find out what projection_dim and n_features are???
+    if config_file['resnet_model'] == "resnetIMPA":
+        model = simCLR(encoder=image_encoder,
+                    projection_dim=config_file['projection_dim'],
+                    n_features=config_file['n_features'])
+    else:
+        model = simCLRrn50(projection_dim=config_file['projection_dim'])
 
 
     model = model.to(device)

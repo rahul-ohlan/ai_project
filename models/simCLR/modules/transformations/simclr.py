@@ -17,9 +17,10 @@ class TransformsSimCLR:
             [
                 self.to_pil,
                 torchvision.transforms.RandomResizedCrop(size=size),
+                torchvision.transforms.RandomRotation(degrees=[90,90]),
                 torchvision.transforms.RandomHorizontalFlip(),  # with 0.5 probability
                 torchvision.transforms.RandomApply([color_jitter], p=0.8),
-                torchvision.transforms.RandomGrayscale(p=0.2),
+                # torchvision.transforms.RandomGrayscale(p=0.2),
                 torchvision.transforms.ToTensor(),
             ]
         )

@@ -5,14 +5,15 @@ from models.simCLR import simCLR
 from models.simCLR.modules import LARS
 
 
-def load_optimizer(args, model):
+def load_optimizer(args, model,use_scheduler=False):
 
-    # scheduler = None
+    scheduler = None
     if args['optimizer'] == "Adam":
         optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])  # TODO: LARS
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 
-                                                               args['num_epochs'], 
-                                                               eta_min=0, last_epoch=-1) 
+        if use_scheduler:
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 
+                                                                args['num_epochs'], 
+                                                                eta_min=0, last_epoch=-1) 
     elif args['optimizer'] == "LARS":
         # optimized using LARS with linear learning rate scaling
         # (i.e. LearningRate = 0.3 × BatchSize/256) and weight decay of 10−6.
@@ -25,8 +26,9 @@ def load_optimizer(args, model):
         )
 
         # "decay the learning rate with the cosine decay schedule without restarts"
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, args.epochs, eta_min=0, last_epoch=-1
+        if use_scheduler:
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer, args.epochs, eta_min=0, last_epoch=-1
         )
     else:
         raise NotImplementedError

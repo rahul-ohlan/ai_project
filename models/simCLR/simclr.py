@@ -4,7 +4,44 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
+import torchvision.models as models
 from models.simCLR.modules.identity import Identity
+
+class simCLRrn50(nn.Module):
+    """
+    SimCLR implementation using ResNet-50 as the encoder.
+    """
+
+    def __init__(self, projection_dim, pretrained=False):
+        super(simCLRrn50, self).__init__()
+
+        # Load ResNet-50
+        self.encoder = models.resnet50(pretrained=pretrained)
+
+        # Number of features from the encoder's penultimate layer
+        n_features = self.encoder.fc.in_features
+
+        # Replace the fc layer with an Identity function
+        self.encoder.fc = Identity()
+
+        # Projection head: MLP with one hidden layer
+        self.projector = nn.Sequential(
+            nn.Linear(n_features, projection_dim, bias=False),
+            nn.ReLU(),
+            nn.Linear(projection_dim, projection_dim, bias=False),
+        )
+
+    def forward(self, x_i, x_j):
+        # Obtain representations from the encoder
+        h_i = self.encoder(x_i)  # Encoder outputs h_i
+        h_j = self.encoder(x_j)
+
+        # Pass representations through the projection head
+        z_i = self.projector(h_i)  # Projected representations z_i
+        z_j = self.projector(h_j)
+
+        return h_i, h_j, z_i, z_j
+
 
 class simCLR(nn.Module):
     """

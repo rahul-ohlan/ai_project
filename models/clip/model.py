@@ -71,9 +71,11 @@ class CLIP(nn.Module):
         
         else:
             mol_embed_with_concentration = mol_embed
+        print('mol_embed_with_concentration', mol_embed_with_concentration.shape)
         image_features = self.encode_image(image)
 
         mol_features = self.encode_mol(mol_embed_with_concentration) # first encode mol_embeds through projection layer
+        print('mol_features', mol_features.shape)
 
         # gene_features_norm = gene_features / gene_features.norm(dim=-1, keepdim=True)
         # text_features_norm = text_features / text_features.norm(dim=-1, keepdim=True)

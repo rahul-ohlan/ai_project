@@ -67,17 +67,13 @@ class CLIP(nn.Module):
     def forward(self, image, mol_embed, concentration_one_hot=None):  
         
         if concentration_one_hot is not None:
-            print('in here wrong igf')
             mol_embed_with_concentration = torch.cat([mol_embed, concentration_one_hot], dim=1)
         
         else:
-            print('inside the correct if')
             mol_embed_with_concentration = mol_embed
-        print('mol_embed_with_concentration', mol_embed_with_concentration.shape)
         image_features = self.encode_image(image)
 
         mol_features = self.encode_mol(mol_embed_with_concentration) # first encode mol_embeds through projection layer
-        print('mol_features', mol_features.shape)
 
         # gene_features_norm = gene_features / gene_features.norm(dim=-1, keepdim=True)
         # text_features_norm = text_features / text_features.norm(dim=-1, keepdim=True)
@@ -187,7 +183,6 @@ class projection(nn.Module):
 
     def forward(self, x):
         for layer in self.layers:
-            print('x shape', x.shape)
             x = layer(x)
         return x    
 

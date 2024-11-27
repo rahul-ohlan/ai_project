@@ -48,6 +48,7 @@ class CLIPDataset(Dataset):
         self.embeddings_dict= self.load_embeddings()
         self.meta_data = pd.read_csv(self.meta_data_path)
         self.split = split # train / test
+        print('checking before check', self.dosage_level)
         if(self.dosage_level is not None):
             print(f'Loading data for dosage level {self.dosage_level}')
             self.meta_data = pd.concat([self.meta_data[self.meta_data['DOSE'] == self.dosage_level], self.meta_data[self.meta_data['DOSE'] == 0.0]], ignore_index=True)

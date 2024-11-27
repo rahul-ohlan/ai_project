@@ -38,6 +38,7 @@ def parse_args():
     data_args.add_argument('--experiment_ID', type=str, required=True) 
     data_args.add_argument("--model_chkpt_dir", type=str, default='clip') # -- checkpoints/<model>
     data_args.add_argument("--add_dosage", type=str2bool, default='False')
+    data_args.add_argument("--dosage_level", type=float, default=0.0, required=False) # if dosage level is not equal to zero, it will filter based on the provided dosage level otherwise it won't 
 
     # train args 
     train_args = parser.add_argument_group("Train Args")
@@ -95,8 +96,8 @@ def parse_args():
 
 
 def main(config_file):
-    
-    # save configuration
+
+# save configuration
     config_save_path = os.path.join(config_file['checkpoint_dir'], config_file['model_chkpt_dir'], f"{config_file['experiment_ID']}")
     os.makedirs(config_save_path, exist_ok=True)
 

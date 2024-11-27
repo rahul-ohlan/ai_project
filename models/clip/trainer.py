@@ -9,7 +9,7 @@ class CLIPTrainer:
     def __init__(self, config):
         self.config = config
 
-    def train_epoch(self,model, dataloader, device, optimizer, scheduler=None):
+    def train_epoch(self,model, dataloader, device, optimizer, scheduler=None, **args):
 
         model.train()
         train_loss = AvgMeter()
@@ -24,8 +24,10 @@ class CLIPTrainer:
 
 
             # get model outputs
-            gene_features, mol_features, logit = model(image, mol_embed, dosage) # it returns unnormed embeddings
-
+            if(args['add_dosage']):
+                gene_features, mol_features, logit = model(image, mol_embed, dosage) # it returns unnormed embeddings
+            else:
+                gene_features, mol_features, logit = model(image, mol_embed, None)
             # print(image_features.size(), text_features.size())
 
             # compute loss
@@ -59,12 +61,11 @@ class CLIPTrainer:
                 mol_embed = batch["smiles_emb"].to(device)
                 smiles = batch["smiles"]
                 dosage = batch["dosage"].to(device)
-            
 
-
-                # get model outputs
-                gene_features, mol_features, logit = model(image, mol_embed, dosage) # it returns unnormed embeddings
-
+                if(args['add_dosage']):
+                    gene_features, mol_features, logit = model(image, mol_embed, dosage) # it returns unnormed embeddings
+                else:
+                    gene_features, mol_features, logit = model(image, mol_embed, None)
 
                 # compute loss
                 if self.config["loss_fn"] == "infoNCE":

@@ -32,6 +32,7 @@ class CLIPDataset(Dataset):
         super().__init__()
 
         self.data_path = args['data_dir']
+        self.dosage_level = args['dosage_level']
         assert os.path.exists(self.data_path), f"Data path {self.data_path} does not exist."
         self.meta_data_csv = args['meta_data_csv']
         self.embeddings_file = args['embeddings_file'] # path to SMILES: embeddings pkl file
@@ -47,9 +48,9 @@ class CLIPDataset(Dataset):
         self.embeddings_dict= self.load_embeddings()
         self.meta_data = pd.read_csv(self.meta_data_path)
         self.split = split # train / test
-        if(self.args.dosage_level != 0.0):
-            print(f'Loading data for dosage level {self.args.dosage_level}')
-            self.meta_data = pd.concat([self.meta_data[self.meta_data['DOSE'] == self.args.dosage_level], self.meta_data[self.meta_data['DOSE'] == 0.0]], ignore_index=True)
+        if(self.dosage_level != 0.0):
+            print(f'Loading data for dosage level {self.dosage_level}')
+            self.meta_data = pd.concat([self.meta_data[self.meta_data['DOSE'] == self.dosage_level], self.meta_data[self.meta_data['DOSE'] == 0.0]], ignore_index=True)
         # DEBUG
         # self.meta_data = self.meta_data.sample(500)
         self.meta_data = self.meta_data.loc[self.meta_data['SPLIT'] == self.split].reset_index(drop=True)

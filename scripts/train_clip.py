@@ -37,6 +37,7 @@ def parse_args():
     data_args.add_argument('--checkpoint_dir', type=str, default='/rohlan/workspace/checkpoints/')
     data_args.add_argument('--experiment_ID', type=str, required=True) 
     data_args.add_argument("--model_chkpt_dir", type=str, default='clip') # -- checkpoints/<model>
+    data_args.add_argument("--add_dosage", type=str2bool, default='False')
 
     # train args 
     train_args = parser.add_argument_group("Train Args")

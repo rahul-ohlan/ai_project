@@ -35,6 +35,7 @@ class CLIPDataset(Dataset):
         assert os.path.exists(self.data_path), f"Data path {self.data_path} does not exist."
         self.meta_data_csv = args['meta_data_csv']
         self.embeddings_file = args['embeddings_file'] # path to SMILES: embeddings pkl file
+        self.add_dosage = args['add_dosage']
 
 
         self.meta_data_path = os.path.join(self.data_path,'metadata',self.meta_data_csv) # root directory
@@ -107,7 +108,10 @@ class CLIPDataset(Dataset):
         if emb is not None:
             emb = torch.tensor(emb, dtype=torch.float32)
 
-        dosage_encoded = self.one_hot_encode_dosage(dosage)
+        if self.args['add_dosage'] is not None:
+            dosage_encoded = self.one_hot_encode_dosage(dosage)
+        else:
+            dosage_encoded = None
         
         return {
             'image': image.to(self.device),

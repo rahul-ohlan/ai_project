@@ -111,7 +111,7 @@ class CLIPDataset(Dataset):
         if emb is not None:
             emb = torch.tensor(emb, dtype=torch.float32)
 
-        if self.args['add_dosage'] is not None:
+        if self.add_dosage is not None:
             dosage_encoded = self.one_hot_encode_dosage(dosage)
         else:
             dosage_encoded = None

@@ -45,9 +45,11 @@ class CLIPDataset(Dataset):
         assert os.path.exists(self.embeddings_path), f"Embeddings file {self.embeddings_path} does not exist."
 
         self.embeddings_dict= self.load_embeddings()
-
-        self.split = split # train / test
         self.meta_data = pd.read_csv(self.meta_data_path)
+        self.split = split # train / test
+        if(args.dosage_level != 0.0):
+            print(f'Loading data for dosage level {args.dosage_level}')
+            self.meta_data = pd.concat([self.meta_data[self.meta_data['DOSE'] == args.dosage_level], self.meta_data[self.meta_data['DOSE'] == 0.0]], ignore_index=True)
         # DEBUG
         # self.meta_data = self.meta_data.sample(500)
         self.meta_data = self.meta_data.loc[self.meta_data['SPLIT'] == self.split].reset_index(drop=True)

@@ -26,7 +26,7 @@ HOPFIELD_SCALE=0.3
 HOPFIELD_INPUT_DIM=64
 INV_TAU_CLAMP="yes"
 
-EXPERIMENT_ID="cloome_inv_tau_${INV_TAU}"
+EXPERIMENT_ID="cloome_inv_tau_${INV_TAU}_dosage_10.0"
 echo "Running experiment with inv tau: $INV_TAU and experiment ID: $EXPERIMENT_ID"
 
 python train_clip.py \
@@ -47,7 +47,9 @@ python train_clip.py \
     --inv_tau $INV_TAU \
     --hopfield_scale $HOPFIELD_SCALE \
     --hopfield_input_dim $HOPFIELD_INPUT_DIM \
-    --inv_tau_clamp $INV_TAU_CLAMP
+    --inv_tau_clamp $INV_TAU_CLAMP \
+    --dosage_level 10.0 \
+    --add_dosage false 
 
 # Array of a parameter to experiment with
 # INV_TAU=(0.2 1.0 5.0 14.3)

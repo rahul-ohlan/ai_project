@@ -1,5 +1,5 @@
 # Model Architecture
-![Model Architecture](images/arch.png)
+![Model Architecture](media/arch.png)
 
 ## Instructions
 CLIP training script

@@ -66,7 +66,7 @@ class EarlyStopping:
             print(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
         
         # check for distributed training
-        model_state_dict = model.module.state_dict() if isinstance(model,nn.DataParallel) else model.state_dict()
+        model_state_dict = model.module.state_dict() if isinstance(model,(nn.DataParallel, nn.parallel.DistributedDataParallel)) else model.state_dict()
         
         chkpt = os.path.join(self.save_path, f"best_val.pt")
 

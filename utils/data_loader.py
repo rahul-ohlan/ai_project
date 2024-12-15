@@ -11,7 +11,7 @@ import pickle
 import torch
 from torch.utils.data import Dataset
 from sklearn.preprocessing import OneHotEncoder
-from utils.data_utils import CustomTransform, read_files_batch, read_files_pert
+# from utils.data_utils import CustomTransform, read_files_batch, read_files_pert
 
 class CLIPDataset(Dataset):
     """
@@ -356,3 +356,198 @@ class simCLRDataLoader:
             DataLoader: Test data loader.
         """
         return self.loader_test
+
+
+# decoder dataset and dataloaders
+    
+
+class DecoderDataset(Dataset):
+    def __init__(self, split, transform=None, **args):
+        """
+        Initialize the CellDataset instance.
+        
+        Args:
+            args (argparse.Namespace): Arguments containing dataset configuration.
+            device (torch.device): Device to load the data onto (e.g., 'cuda' or 'cpu').
+        """
+        super().__init__()
+
+        self.data_path = args['data_dir']
+        assert os.path.exists(self.data_path), f"Data path {self.data_path} does not exist."
+
+
+        if split == "train":
+            self.data = pd.read_pickle(os.path.join(self.data_path, args["train_file"]))
+        
+        elif split == "val":
+            self.data = pd.read_pickle(os.path.join(self.data_path, args["val_file"]))
+
+        elif split == "test":
+            self.data = pd.read_pickle(os.path.join(self.data_path, args["test_file"]))
+
+
+        # DEBUG
+        # self.data = self.data.sample(500)
+        
+        self.transform = transform
+
+
+
+
+    def __len__(self):
+        """
+        Return the length of the dataset.
+        
+        Returns:
+            int: Length of the dataset.
+        """
+        return len(self.data)
+    
+    def __getitem__(self,idx):
+
+        image_id = self.data.iloc[idx]['image_id']
+        image_file = os.path.join(self.data_path, image_id + '.npz')
+        assert os.path.exists(image_file), f"Image file {image_file} does not exist."
+        # load image
+        image = np.load(image_file, allow_pickle=True)['sample']
+        image = torch.tensor(image, dtype=torch.float32)
+        image = image.permute(2, 0, 1)  # Place channel dimension in front of the others
+        smiles = self.data.iloc[idx]['SMILES']
+        image_emb = self.data.iloc[idx, 3:].values.astype(np.float32)
+
+        if self.transform:
+            image = self.transform(image)
+        
+
+
+        
+        return {
+            'SMILES': smiles,
+            'image': image,
+            'image_emb': image_emb
+        }
+
+class DecoderDataLoader:
+    def __init__(self, rank,transform=None, **args):
+        """
+        Initialize the CellDataLoader instance.
+        
+        Args:
+            args (argparse.Namespace): Arguments containing dataloader configuration.
+        """
+        super().__init__()
+        self.rank = rank
+        self.args = args
+        self.transform = transform
+        self.init_dataset() # create datasets and return dataloaders
+        
+    def create_torch_datasets(self):
+        """
+        Create datasets compatible with the PyTorch training loop.
+        
+        Returns:
+            tuple: Training and test datasets.
+        """
+        train_set = DecoderDataset(split='train', transform=self.transform, **self.args)
+        val_set = DecoderDataset(split='val', transform=self.transform, **self.args)
+        test_set = DecoderDataset(split='test', transform=self.transform, **self.args)
+        
+        return train_set, val_set, test_set
+        
+    def init_dataset(self):
+        """
+        Initialize dataset and data loaders.
+        """
+        self.train_set, self.val_set, self.test_set = self.create_torch_datasets()
+        
+        if self.args['distributed']:
+            train_sampler = torch.utils.data.distributed.DistributedSampler(self.train_set,
+                                                                            num_replicas=self.args['world_size'],
+                                                                            rank=self.rank,
+                                                                            shuffle=True)
+        else:
+            train_sampler=None                                                             
+
+        self.loader_train = torch.utils.data.DataLoader(
+            self.train_set, 
+            batch_size=self.args['train_batch_size'], 
+            shuffle=(train_sampler is None), 
+            sampler=train_sampler,
+            drop_last=True)
+        
+        self.loader_val= torch.utils.data.DataLoader(
+            self.val_set, 
+            batch_size=self.args['val_batch_size'], 
+            shuffle=False, 
+            drop_last=False)
+        
+        self.loader_test= torch.utils.data.DataLoader(
+            self.test_set, 
+            batch_size=self.args['test_batch_size'], 
+            shuffle=False, 
+            drop_last=False)
+
+
+        
+    
+    def train_dataloader(self):
+        """
+        Return the training data loader.
+        
+        Returns:
+            DataLoader: Training data loader.
+        """
+        return self.loader_train
+    
+    def val_dataloader(self):
+        """
+        Return the validation data loader.
+        
+        Returns:
+            DataLoader: Validation data loader.
+        """
+        if self.loader_val is None:
+            raise NotImplementedError("Validation data loader not implemented.")
+        return self.loader_val
+    
+    def test_dataloader(self):
+        """
+        Return the test data loader.
+        
+        Returns:
+            DataLoader: Test data loader.
+        """
+        if self.loader_val is None:
+            raise NotImplementedError("Test data loader not implemented.")
+        return self.loader_test
+
+if __name__ == "__main__":
+    # args = {
+    #     'train_file': 'train_df.pkl',
+    #     'val_file': 'val_df.pkl',
+    #     'test_file': 'test_df.pkl',
+    #     'train_batch_size': 32,
+    #     'val_batch_size': 32,
+    #     'test_batch_size': 32,
+    #     'data_dir': '/rohlan/workspace/data',
+    #     'distributed': False
+    # }
+
+    # decoder_loader = DecoderDataLoader(rank=0, **args)
+    # train_loader = decoder_loader.train_dataloader()
+
+    # batch = next(iter(train_loader))
+    # batch.keys()
+    # len(batch['SMILES'])
+    # batch['image'].shape
+    # batch['image_emb'].shape
+
+    # data = np.load('/rohlan/workspace/data/24277-A03-1.npz', allow_pickle=True)
+    # print(list(data.keys()))
+
+    # print(data['channels'])
+    # print(data['filenames'])
+    # print(data['sample'].shape)
+
+    # # cool all decoder dataloader working fine now!
+    pass

@@ -7,6 +7,7 @@
 **/.DS_Store
 .vscode/
 data/
+data_bbbc021/
 wandb/
 checkpoints/
 **/__pycache__/
